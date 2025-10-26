@@ -1,10 +1,15 @@
-﻿import shutil
-import stat
+﻿# TODO: argparse as a config file
+# TODO: clean up string rules
+
+import shutil
 import os
 from collections import defaultdict
 from pathlib import Path
 from datetime import datetime
 from typing import Literal, Optional
+
+from backuptool.backup_instance import BackupInstance
+from backuptool.utils import remove_readonly, maximum, find_project_root
 
 # ========= GLOBAL DEFAULT VALUES =========== #
 _name_format: str = "%Y%m%d_%H%M%S"
@@ -12,50 +17,6 @@ _dest: Path = Path.cwd()
 _archive_type: Literal["zip", "tar", "gztar", "bztar", "xztar", "noarchive"] = "zip"
 
 
-# ============= HELP FUNCS =============== #
-def remove_readonly(func, path, _):
-    """Callback for shutil.rmtree. If exception PermissionError raise,
-    will remove read-only flag and try to call the func again"""
-    os.chmod(path, stat.S_IWRITE)
-    func(path)
-
-class BackupInstance:
-    def __init__(self, file: str, date_len: int, name_format: str):
-        self.file = file
-        self.suffix = self.get_suffix(date_len)
-        self.date_type = datetime.strptime(file[:date_len], name_format)
-
-    def get_suffix(self, date_len):
-        """ Resolve if backup has suffix
-            :param date_len: length of the file name
-            :return: If folder return None otherwise suffix"""
-        if "." not in self.file:
-            return None
-        else:
-            return self.file[date_len+1:]
-
-def maximum(instances: list[BackupInstance]) -> BackupInstance:
-    """ Find the newest date of the day (based on time)
-        :param instances: list of days
-        :return: newest date"""
-    max_value = instances[0]
-    for inst in instances:
-        if inst.date_type > max_value.date_type:
-            max_value = inst
-    return max_value
-
-def find_project_root(target_folder: str | Path) -> Optional[Path]:
-    """ Find project root folder (default is current working directory
-        :param target_folder: name of project root folder
-        :return: project root path"""
-    target_folder = Path(target_folder).name
-    current = Path(__file__).resolve().parent  # start from current dir
-
-    for parent in [current, *current.parents]:
-        candidate = parent / target_folder
-        if candidate.exists() and candidate.is_dir():
-            return candidate
-    return Path().cwd()
 
 def run_backup(
         source: str | Path = Path.cwd(),
@@ -92,7 +53,6 @@ def run_backup(
 
     def ignore_files(_, files):
         return [f for f in files if f in ignore]
-
     shutil.copytree(source_folder, dest, ignore=ignore_files, dirs_exist_ok=True)
 
     if archive_type != "noarchive":
