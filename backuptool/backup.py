@@ -4,7 +4,6 @@ import os
 from collections import defaultdict
 from pathlib import Path
 from datetime import datetime
-from os import PathLike
 from typing import Literal, Optional
 
 # ========= GLOBAL DEFAULT VALUES =========== #
@@ -45,8 +44,21 @@ def maximum(instances: list[BackupInstance]) -> BackupInstance:
             max_value = inst
     return max_value
 
+def find_project_root(target_folder: str | Path) -> Optional[Path]:
+    """ Find project root folder (default is current working directory
+        :param target_folder: name of project root folder
+        :return: project root path"""
+    target_folder = Path(target_folder).name
+    current = Path(__file__).resolve().parent  # start from current dir
+
+    for parent in [current, *current.parents]:
+        candidate = parent / target_folder
+        if candidate.exists() and candidate.is_dir():
+            return candidate
+    return Path().cwd()
+
 def run_backup(
-        source: str | Path = "", # TODO: find project root
+        source: str | Path = Path.cwd(),
         dest: Optional[str | Path] = None,
         ignore: Optional[list[str]] = None,
         name_format: Optional[str] = None, # strftime format string
@@ -59,7 +71,7 @@ def run_backup(
         :param name_format: strftime format string, default is ISO format
         :param archive_type: Which type of archive you want, if you want to just copy your
         project without using archive use 'noarchive'
-        :return Path of your created backup"""
+        :return: Path of your created backup"""
     global _dest, _name_format, _archive_type
 
     # Fallback values
@@ -73,15 +85,15 @@ def run_backup(
     _name_format = name_format
     _archive_type = archive_type
 
+    source_folder = find_project_root(source)
     now = datetime.now()
-    source = Path(source)
     name_format = now.strftime(name_format)
     dest = dest / name_format
 
     def ignore_files(_, files):
         return [f for f in files if f in ignore]
 
-    shutil.copytree(source, dest, ignore=ignore_files, dirs_exist_ok=True)
+    shutil.copytree(source_folder, dest, ignore=ignore_files, dirs_exist_ok=True)
 
     if archive_type != "noarchive":
         shutil.make_archive(str(dest), archive_type, dest)
