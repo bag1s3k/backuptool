@@ -1,2 +1,2 @@
-﻿from .backup import run_backup
-from .backup import clean_up
+﻿from .main import run_backup
+from .main import clean_up

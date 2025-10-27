@@ -1,11 +1,15 @@
-﻿import shutil
-import stat
+﻿# TODO: argparse as a config file
+# TODO: clean up string rules
+
+import shutil
 import os
 from collections import defaultdict
 from pathlib import Path
 from datetime import datetime
-from os import PathLike
 from typing import Literal, Optional
+
+from backuptool.backup_instance import BackupInstance
+from backuptool.utils import remove_readonly, maximum, find_project_root
 
 # ========= GLOBAL DEFAULT VALUES =========== #
 _name_format: str = "%Y%m%d_%H%M%S"
@@ -13,40 +17,9 @@ _dest: Path = Path.cwd()
 _archive_type: Literal["zip", "tar", "gztar", "bztar", "xztar", "noarchive"] = "zip"
 
 
-# ============= HELP FUNCS =============== #
-def remove_readonly(func, path, _):
-    """Callback for shutil.rmtree. If exception PermissionError raise,
-    will remove read-only flag and try to call the func again"""
-    os.chmod(path, stat.S_IWRITE)
-    func(path)
-
-class BackupInstance:
-    def __init__(self, file: str, date_len: int, name_format: str):
-        self.file = file
-        self.suffix = self.get_suffix(date_len)
-        self.date_type = datetime.strptime(file[:date_len], name_format)
-
-    def get_suffix(self, date_len):
-        """ Resolve if backup has suffix
-            :param date_len: length of the file name
-            :return: If folder return None otherwise suffix"""
-        if "." not in self.file:
-            return None
-        else:
-            return self.file[date_len+1:]
-
-def maximum(instances: list[BackupInstance]) -> BackupInstance:
-    """ Find the newest date of the day (based on time)
-        :param instances: list of days
-        :return: newest date"""
-    max_value = instances[0]
-    for inst in instances:
-        if inst.date_type > max_value.date_type:
-            max_value = inst
-    return max_value
 
 def run_backup(
-        source: str | Path = "", # TODO: find project root
+        source: str | Path = Path.cwd(),
         dest: Optional[str | Path] = None,
         ignore: Optional[list[str]] = None,
         name_format: Optional[str] = None, # strftime format string
@@ -59,7 +32,7 @@ def run_backup(
         :param name_format: strftime format string, default is ISO format
         :param archive_type: Which type of archive you want, if you want to just copy your
         project without using archive use 'noarchive'
-        :return Path of your created backup"""
+        :return: Path of your created backup"""
     global _dest, _name_format, _archive_type
 
     # Fallback values
@@ -73,15 +46,14 @@ def run_backup(
     _name_format = name_format
     _archive_type = archive_type
 
+    source_folder = find_project_root(source)
     now = datetime.now()
-    source = Path(source)
     name_format = now.strftime(name_format)
     dest = dest / name_format
 
     def ignore_files(_, files):
         return [f for f in files if f in ignore]
-
-    shutil.copytree(source, dest, ignore=ignore_files, dirs_exist_ok=True)
+    shutil.copytree(source_folder, dest, ignore=ignore_files, dirs_exist_ok=True)
 
     if archive_type != "noarchive":
         shutil.make_archive(str(dest), archive_type, dest)
