@@ -1,7 +1,4 @@
-﻿# TODO: argparse as a config file
-# TODO: clean up string rules
-
-import shutil
+﻿import shutil
 import os
 from collections import defaultdict
 from pathlib import Path
@@ -9,13 +6,12 @@ from datetime import datetime
 from typing import Literal, Optional
 
 from backuptool.backup_instance import BackupInstance
-from backuptool.utils import remove_readonly, maximum, find_project_root
+from backuptool.utils import remove_readonly, maximum
 
 # ========= GLOBAL DEFAULT VALUES =========== #
 _name_format: str = "%Y%m%d_%H%M%S"
 _dest: Path = Path.cwd()
 _archive_type: Literal["zip", "tar", "gztar", "bztar", "xztar", "noarchive"] = "zip"
-
 
 
 def run_backup(
@@ -26,11 +22,11 @@ def run_backup(
         archive_type: Optional[Literal["zip", "tar", "gztar", "bztar", "xztar", "noarchive"]] = None,
 ) -> str:
     """ Create backup of your project
-        :param source: Absolute path to your project or project root folder name
+        :param source: Absolute path to source or absolute path for file
         :param dest: target folder for your backups
         :param ignore: list of your files or folders you don't want to have in backup
         :param name_format: strftime format string, default is ISO format
-        :param archive_type: Which type of archive you want, if you want to just copy your
+        :param archive_type: Which type of archive you want: ["zip", "tar", "gztar", "bzdar", "xztar"] if you want to just copy your folder use 'noarchive'
         project without using archive use 'noarchive'
         :return: Path of your created backup"""
     global _dest, _name_format, _archive_type
@@ -46,20 +42,30 @@ def run_backup(
     _name_format = name_format
     _archive_type = archive_type
 
-    source_folder = find_project_root(source)
     now = datetime.now()
     name_format = now.strftime(name_format)
-    dest = dest / name_format
+    isfile = os.path.isfile(source)
 
-    def ignore_files(_, files):
-        return [f for f in files if f in ignore]
-    shutil.copytree(source_folder, dest, ignore=ignore_files, dirs_exist_ok=True)
+    if not isfile: # create backup of folder
+        dest_folder = dest / name_format
+        def ignore_files(_, files):
+            return [f for f in files if f in ignore]
+        shutil.copytree(source, dest_folder, ignore=ignore_files, dirs_exist_ok=True)
 
-    if archive_type != "noarchive":
-        shutil.make_archive(str(dest), archive_type, dest)
-        shutil.rmtree(dest, onerror=remove_readonly)
+        if archive_type != "noarchive":
+            shutil.make_archive(str(dest_folder), archive_type, dest_folder)
+            shutil.rmtree(dest_folder, onerror=remove_readonly)
+    else: # create backup of file
+        suffix = ""
+        for c in source[::-1]:
+            if c == ".":
+                break
+            suffix += c
+        dest_folder = f"{dest}/{name_format}.{suffix[::-1]}"
+        print(dest_folder)
+        shutil.copy(source, dest_folder)
 
-    return str(dest)
+    return str(dest_folder)
 
 def clean_up(
         dest: Optional[str | Path] = None,

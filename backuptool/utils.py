@@ -20,16 +20,3 @@ def maximum(instances: list[BackupInstance]) -> BackupInstance:
         if inst.date_type > max_value.date_type:
             max_value = inst
     return max_value
-
-def find_project_root(target_folder: str | Path) -> Optional[Path]:
-    """ Find project root folder (default is current working directory
-        :param target_folder: name of project root folder
-        :return: project root path"""
-    target_folder = Path(target_folder).name
-    current = Path(__file__).resolve().parent  # start from current dir
-
-    for parent in [current, *current.parents]:
-        candidate = parent / target_folder
-        if candidate.exists() and candidate.is_dir():
-            return candidate
-    return Path().cwd()
