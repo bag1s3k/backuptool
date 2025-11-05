@@ -1,7 +1,4 @@
-﻿# TODO: argparse as a config file
-# TODO: clean up string rules
-
-import shutil
+﻿import shutil
 import os
 from collections import defaultdict
 from pathlib import Path
@@ -9,13 +6,12 @@ from datetime import datetime
 from typing import Literal, Optional
 
 from backuptool.backup_instance import BackupInstance
-from backuptool.utils import remove_readonly, maximum, find_project_root
+from backuptool.utils import remove_readonly, maximum
 
 # ========= GLOBAL DEFAULT VALUES =========== #
 _name_format: str = "%Y%m%d_%H%M%S"
 _dest: Path = Path.cwd()
 _archive_type: Literal["zip", "tar", "gztar", "bztar", "xztar", "noarchive"] = "zip"
-
 
 
 def run_backup(
@@ -46,7 +42,7 @@ def run_backup(
     _name_format = name_format
     _archive_type = archive_type
 
-    source_folder = find_project_root(source)
+    source_folder = Path(source)
     now = datetime.now()
     name_format = now.strftime(name_format)
     dest = dest / name_format
