@@ -156,15 +156,36 @@ def run(config_file: Optional[str] = None, **overrides) -> str:
         raise ValueError(f"Unknown params: {unknown_params}. Allowed: {allowed_params}")
 
     config = _config_from_default()
-
     override_config = _configure_config(config, overrides, config_file)
 
-    return _run_process(override_config)
+    # --------------- LOGIC ITSELF --------------- #
+    now = datetime.now()
+    name_format_datetime = now.strftime(override_config["name_format"])
 
+    # create backup of folder
+    if not os.path.isfile(override_config["src"]):
+        dest_folder = override_config["dst"] / name_format_datetime
 
-# ===================== MAIN LOGIC ================== #
-def _run_process(config: dict) -> str:
-    return ""
+        def ignore_files(_, files):
+            return [f for f in files if f in override_config["ignore"]]
+
+        shutil.copytree(override_config["src"], dest_folder, ignore=ignore_files, dirs_exist_ok=True)
+
+        if override_config["archive_type"] != "noarchive":
+            shutil.make_archive(str(dest_folder), override_config["archive_type"], dest_folder)
+            shutil.rmtree(dest_folder, onerror=remove_readonly)
+
+    # create backup of file
+    else:
+        suffix = ""
+        for c in override_config["src"][::-1]:
+            if c == ".":
+                break
+            suffix += c
+        dest_folder = f"{override_config["dst"]}/{name_format_datetime}.{suffix[::-1]}"
+        shutil.copy(override_config["src"], dest_folder)
+
+    return str(dest_folder)
 
 
 # ===================== LOAD CONFIG ================ #
