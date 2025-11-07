@@ -7,6 +7,7 @@ from typing import Literal, Optional
 
 from backuptool.backup_instance import BackupInstance
 from backuptool.utils import remove_readonly, maximum
+from backuptool.utils import config as cng
 
 # ========= GLOBAL DEFAULT VALUES =========== #
 _name_format: str = "%Y%m%d_%H%M%S"
@@ -20,6 +21,8 @@ def run_backup(
         ignore: Optional[list[str]] = None,
         name_format: Optional[str] = None, # strftime format string
         archive_type: Optional[Literal["zip", "tar", "gztar", "bztar", "xztar", "noarchive"]] = None,
+        config_name: Optional[str | Path] = None,
+        keep_name: bool = False
 ) -> str:
     """ Create backup of your project
         :param source: Absolute path to source or absolute path for file
@@ -28,6 +31,8 @@ def run_backup(
         :param name_format: strftime format string, default is ISO format
         :param archive_type: Which type of archive you want: ["zip", "tar", "gztar", "bzdar", "xztar"] if you want to just copy your folder use 'noarchive'
         project without using archive use 'noarchive'
+        :param config_file: Absolut path to config file must be .ini file
+        :param keep_name: final file name is name_format + name
         :return: Path of your created backup"""
     global _dest, _name_format, _archive_type
 
@@ -126,3 +131,64 @@ def clean_up(
         "isbackup": isbackup,
         "removed": [f.file for f in to_remove]
     }
+
+
+def run(config_file: Optional[str] = None, **overrides) -> str:
+    """ Create backup of your file or folder
+        :param config_file: Absolut path to your config file
+        :key src: (str, Path) Absolute path of source, it might be file or folder
+        :key dst: (str, Path) Absolute path of target folder
+        :key ignore: (list[str]) excluded list of files or folders
+        :key name_format: (str) strftime string format, default is ISO format
+        :key archive_type: (str) allowed archive types: ['zip', 'tar', 'gztar', 'bztar', 'xztar'] or 'nonarchive' stands for do not create archive
+        :key keep_name: (bool) result name is name_format + file's/folder's name
+        :return: (str) Absolute path of created backup"""
+    allowed_params = {
+        "src",
+        "dst",
+        "ignore",
+        "name_format",
+        "archive_type",
+        "keep_name"
+    }
+
+    if unknown_params := set(overrides.keys()) - allowed_params:
+        raise ValueError(f"Unknown params: {unknown_params}. Allowed: {allowed_params}")
+
+    config = _config_from_default()
+
+    override_config = _configure_config(config, overrides, config_file)
+
+    return _run_process(override_config)
+
+
+# ===================== MAIN LOGIC ================== #
+def _run_process(config: dict) -> str:
+    return ""
+
+
+# ===================== LOAD CONFIG ================ #
+def _config_from_file():
+    return dict()
+
+def _config_from_default():
+    return dict()
+
+
+# ==================== UTILS =================== #
+def _configure_config(current_config: dict, to_override: dict, config_file) -> dict:
+    pre_config = current_config
+    if config_file:
+        pre_config = _override_dict(pre_config, _config_from_file())
+
+    overrides = _override_dict(pre_config, to_override)
+
+    return overrides
+
+
+def _override_dict(current_dict: dict, new_dict: dict) -> dict:
+    overrides = {}
+    for k,v in current_dict.items():
+        overrides[k] = new_dict[k]
+
+    return overrides
