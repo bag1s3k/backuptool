@@ -7,7 +7,7 @@ from typing import Literal, Optional
 
 from backuptool.backup_instance import BackupInstance
 from backuptool.utils import remove_readonly, maximum
-from backuptool.utils import config as cng
+from backuptool.utils import f_config
 
 # ========= GLOBAL DEFAULT VALUES =========== #
 _name_format: str = "%Y%m%d_%H%M%S"
@@ -132,6 +132,14 @@ def clean_up(
         "removed": [f.file for f in to_remove]
     }
 
+_default_config = {
+    "src": Path.cwd(),
+    "dst": Path.cwd(),
+    "ignore": [],
+    "name_format": "%Y%m%d_%H%M%S",
+    "archive_type": "zip",
+    "keep_name": False
+}
 
 def run(config_file: Optional[str] = None, **overrides) -> str:
     """ Create backup of your file or folder
@@ -141,22 +149,18 @@ def run(config_file: Optional[str] = None, **overrides) -> str:
         :key ignore: (list[str]) excluded list of files or folders
         :key name_format: (str) strftime string format, default is ISO format
         :key archive_type: (str) allowed archive types: ['zip', 'tar', 'gztar', 'bztar', 'xztar'] or 'nonarchive' stands for do not create archive
-        :key keep_name: (bool) result name is name_format + file's/folder's name
+        :key keep_name: (bool) result name is name_format + file's/folder's name # TODO: USE !!!!
         :return: (str) Absolute path of created backup"""
-    allowed_params = {
-        "src",
-        "dst",
-        "ignore",
-        "name_format",
-        "archive_type",
-        "keep_name"
-    }
+
+    allowed_params = set()
+    global _default_config
+    for k in _default_config.keys():
+        allowed_params.add(k)
 
     if unknown_params := set(overrides.keys()) - allowed_params:
         raise ValueError(f"Unknown params: {unknown_params}. Allowed: {allowed_params}")
 
-    config = _config_from_default()
-    override_config = _configure_config(config, overrides, config_file)
+    override_config = _configure_config(_default_config, overrides, config_file)
 
     # --------------- LOGIC ITSELF --------------- #
     now = datetime.now()
@@ -187,20 +191,11 @@ def run(config_file: Optional[str] = None, **overrides) -> str:
 
     return str(dest_folder)
 
-
-# ===================== LOAD CONFIG ================ #
-def _config_from_file():
-    return dict()
-
-def _config_from_default():
-    return dict()
-
-
 # ==================== UTILS =================== #
 def _configure_config(current_config: dict, to_override: dict, config_file) -> dict:
     pre_config = current_config
     if config_file:
-        pre_config = _override_dict(pre_config, _config_from_file())
+        pre_config = _override_dict(pre_config, f_config.convert())
 
     overrides = _override_dict(pre_config, to_override)
 
