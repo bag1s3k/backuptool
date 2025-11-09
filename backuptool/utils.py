@@ -85,9 +85,7 @@ def set_correct_config(old_config: dict, new_config: dict, config_file) -> dict:
     if config_file:
         pre_config = _override_dict(pre_config, f_config.convert())
 
-    print(pre_config)
     overrides = _override_dict(pre_config, new_config)
-    print(overrides)
 
     return overrides
 
