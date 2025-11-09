@@ -19,7 +19,7 @@ def run(config_file: Optional[str | Path] = None, **overrides) -> str:
         :key ignore: (list[str]) excluded list of files or folders
         :key name_format: (str) strftime string format, default is ISO format
         :key archive_type: (str) allowed archive types: ['zip', 'tar', 'gztar', 'bztar', 'xztar'] or 'nonarchive' stands for do not create archive
-        :key keep_name: (bool) result name is name_format + file's/folder's name # TODO: USE !!!!
+        :key keep_name: (bool) result name is name_format + file's/folder's name
         :return: (str) Absolute path of created backup
         """
 
@@ -31,9 +31,19 @@ def run(config_file: Optional[str | Path] = None, **overrides) -> str:
     now = datetime.now()
     name_format_datetime = now.strftime(override_config["name_format"])
 
+    if override_config["keep_name"]:
+        file_name = override_config["src"].split("/")
+        if "." in file_name[-1]:
+            file_name = file_name[-1].split(".")[0]
+        else:
+            file_name = file_name[-1]
+    else:
+        file_name = ""
+
     # create backup of folder
     if not os.path.isfile(override_config["src"]):
-        dest_folder = Path(override_config["dst"]) / Path(name_format_datetime)
+        print(file_name)
+        dest_folder = Path(override_config["dst"]) / Path(f"{name_format_datetime}_{file_name}")
 
         def ignore_files(_, files):
             return [f for f in files if f in override_config["ignore"]]
@@ -56,7 +66,7 @@ def run(config_file: Optional[str | Path] = None, **overrides) -> str:
             if c == ".":
                 break
             suffix += c
-        dest_folder = f"{override_config["dst"]}/{name_format_datetime}.{suffix[::-1]}"
+        dest_folder = f"{override_config["dst"]}/{name_format_datetime}_{file_name}.{suffix[::-1]}"
         shutil.copy(override_config["src"], dest_folder)
 
     return str(dest_folder)
