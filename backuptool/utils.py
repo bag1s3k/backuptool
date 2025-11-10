@@ -1,20 +1,10 @@
 ﻿import os
 import stat
 import configparser
-from pathlib import Path
 
+from backuptool.CONSTANS import DEFAULT_CONFIG
 from backuptool.backup import BackupInstance
 
-
-default_config = {
-    "src": Path.cwd(),
-    "dst": Path.cwd(),
-    "ignore": [],
-    "name_format": "%Y%m%d_%H%M%S",
-    "archive_type": "zip",
-    "keep_name": False,
-    "backups_amount": 0
-}
 
 def remove_readonly(func, path, _):
     """ Callback for shutil.rmtree. If exception PermissionError raise,
@@ -113,7 +103,7 @@ def check_kwargs(kwargs):
         :param kwargs: variable to check
         """
     allowed_params = set()
-    for k in default_config.keys():
+    for k in DEFAULT_CONFIG.keys():
         allowed_params.add(k)
 
     if unknown_params := set(kwargs.keys()) - allowed_params:

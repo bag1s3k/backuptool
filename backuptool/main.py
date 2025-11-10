@@ -6,10 +6,12 @@ from datetime import datetime
 from typing import Optional
 
 from backuptool.backup import BackupInstance
-from backuptool.utils import (remove_readonly, maximum, default_config, set_correct_config,
-                              check_kwargs)
+from backuptool.utils import remove_readonly, maximum, set_correct_config
+from backuptool.decorator import check_kwargs
+from backuptool.CONSTANS import DEFAULT_CONFIG
 
 
+@check_kwargs(DEFAULT_CONFIG)
 def run(config_file: Optional[str | Path] = None, **overrides) -> str:
     """ Create backup of your file or folder
 
@@ -23,9 +25,9 @@ def run(config_file: Optional[str | Path] = None, **overrides) -> str:
         :return: (str) Absolute path of created backup
         """
 
-    check_kwargs(overrides)
+    # check_kwargs(overrides)
 
-    override_config = set_correct_config(default_config, overrides, config_file)
+    override_config = set_correct_config(DEFAULT_CONFIG, overrides, config_file)
 
     # --------------- LOGIC ITSELF --------------- #
     now = datetime.now()
@@ -72,6 +74,7 @@ def run(config_file: Optional[str | Path] = None, **overrides) -> str:
     return str(dest_folder)
 
 
+@check_kwargs(DEFAULT_CONFIG)
 def clean_up(config_file: Optional[str | Path] = None, **overrides) -> dict:
     """ Clean up backup folder
 
@@ -82,9 +85,9 @@ def clean_up(config_file: Optional[str | Path] = None, **overrides) -> dict:
         if you want to just copy your project without using archive, use 'None' \
         default is current path
         """
-    check_kwargs(overrides)
+    # check_kwargs(overrides)
 
-    override_config = set_correct_config(default_config, overrides, config_file)
+    override_config = set_correct_config(DEFAULT_CONFIG, overrides, config_file)
     content = os.listdir(override_config["dst"])
 
     # Length of format string
