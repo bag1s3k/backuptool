@@ -2,7 +2,7 @@
 from functools import wraps
 
 
-def check_kwargs(allowed_params: dict):
+def check_kwargs(*allowed_params: set):
 
     def decorator(func):
         @wraps(func)
@@ -10,12 +10,19 @@ def check_kwargs(allowed_params: dict):
             """ Check kwargs if it matches with default keys
                 :param kwargs: variable to check
                 """
-            sig = inspect.signature(func)
-            function_params = set(sig.parameters.keys())
 
-            allowed_params_set = set(allowed_params.keys())
-            if unknown_params := set(kwargs.keys()) - function_params  - allowed_params_set:
-                raise ValueError(f"Unknown params: {unknown_params}. Allowed: {[*allowed_params.keys()]}")
+            # Get parameters
+            sig = inspect.signature(func)
+            func_params = set(sig.parameters.keys())
+
+            # If arg equals to set that means it's another params, add to review
+            param_to_check = set()
+            for arg in args:
+                if isinstance(arg, set):
+                    param_to_check |= arg
+
+            if unknown_params := set(kwargs.keys() | param_to_check) - set(*allowed_params) - func_params:
+                raise ValueError(f"Unknown params: {[*unknown_params]}. Allowed: {[*allowed_params]}")
 
             return func(*args, **kwargs)
         return wrapper

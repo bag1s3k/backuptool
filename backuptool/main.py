@@ -8,10 +8,10 @@ from typing import Optional
 from backuptool.backup import BackupInstance
 from backuptool.utils import remove_readonly, maximum, set_correct_config
 from backuptool.decorator import check_kwargs
-from backuptool.CONSTANS import DEFAULT_CONFIG
+from backuptool.CONSTANS import DEFAULT_CONFIG, RUN_KEYS, CLEAN_KEYS
 
 
-@check_kwargs(DEFAULT_CONFIG)
+@check_kwargs(RUN_KEYS)
 def run(config_file: Optional[str | Path] = None, **overrides) -> str:
     """ Create backup of your file or folder
 
@@ -24,8 +24,6 @@ def run(config_file: Optional[str | Path] = None, **overrides) -> str:
         :key keep_name: (bool) result name is name_format + file's/folder's name
         :return: (str) Absolute path of created backup
         """
-
-    # check_kwargs(overrides)
 
     override_config = set_correct_config(DEFAULT_CONFIG, overrides, config_file)
 
@@ -44,7 +42,6 @@ def run(config_file: Optional[str | Path] = None, **overrides) -> str:
 
     # create backup of folder
     if not os.path.isfile(override_config["src"]):
-        print(file_name)
         dest_folder = Path(override_config["dst"]) / Path(f"{name_format_datetime}_{file_name}")
 
         def ignore_files(_, files):
@@ -74,18 +71,17 @@ def run(config_file: Optional[str | Path] = None, **overrides) -> str:
     return str(dest_folder)
 
 
-@check_kwargs(DEFAULT_CONFIG)
+@check_kwargs(CLEAN_KEYS)
 def clean_up(config_file: Optional[str | Path] = None, **overrides) -> dict:
     """ Clean up backup folder
 
-        :param config_file:
+        :param config_file: # TODO: finist docstring
         :return: dict of: folder content, isbackup, removed files
 
         if you have never used run_backup before, default is ISO format
         if you want to just copy your project without using archive, use 'None' \
         default is current path
         """
-    # check_kwargs(overrides)
 
     override_config = set_correct_config(DEFAULT_CONFIG, overrides, config_file)
     content = os.listdir(override_config["dst"])
