@@ -1,20 +1,21 @@
 ﻿from pathlib import Path
+from typing import Literal
 
 from backuptool.decorator import check_kwargs
 
 # Allowed path keyword arguments
 PATH_KEYS = {
-    "src",
-    "dst",
+    "src": str | Path,
+    "dst": str | Path
 }
 
 # Allowed file keyword arguments
 FILE_KEYS = {
-    "ignore",
-    "name_format",
-    "archive_type",
-    "keep_name",
-    "backups_amount"
+    "ignore": list[str],
+    "name_format": str,
+    "archive_type": Literal['zip', 'tar', 'gztar', 'bztar', 'xztar', 'noarchive'],
+    "keep_name": bool | str, # TODO: str, in future there'll be option to create backup with own name
+    "backups_amount": int
 }
 
 # Every possible keyword argument
@@ -25,21 +26,21 @@ EVERY_KEY = {
 
 
 @check_kwargs(EVERY_KEY)
-def exclude_keys(key_set: set, exclude: set = None) -> set:
+def exclude_keys(key_set: dict, exclude: set = None) -> set:
     """ Exclude specific keys from the given set
         :param key_set: original set of keys
         :param exclude: set with keys to exclude
         :return: new set with exclude keys removed
         """
     result = set()
-    result |= key_set
+    result |= set(key_set.keys())
     result -= exclude
     return result
 
 # Keyword arguments for run func
 RUN_KEYS = {
     *PATH_KEYS,
-    *exclude_keys(FILE_KEYS, {"backups_amount"})
+    *exclude_keys(FILE_KEYS, {"backups_amount"}) # TODO: exclude key
 }
 
 # Keyword arguments for clean func
