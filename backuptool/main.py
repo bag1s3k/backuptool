@@ -20,7 +20,7 @@ def run(config_file: Optional[str | Path] = None, **overrides) -> str:
         :key dst: (str, Path) Absolute path of target folder
         :key ignore: (list[str]) excluded list of files or folders
         :key name_format: (str) strftime string format, default is ISO format
-        :key archive_type: (str) allowed archive types: ['zip', 'tar', 'gztar', 'bztar', 'xztar'] or 'nonarchive' stands for do not create archive
+        :key archive_type: (str) allowed archive types: ['zip', 'tar', 'gztar', 'bztar', 'xztar'] or 'noarchive' stands for do not create archive
         :key keep_name: (bool) result name is name_format + file's/folder's name
         :return: (str) Absolute path of created backup
         """
@@ -75,12 +75,13 @@ def run(config_file: Optional[str | Path] = None, **overrides) -> str:
 def clean_up(config_file: Optional[str | Path] = None, **overrides) -> dict:
     """ Clean up backup folder
 
-        :param config_file: # TODO: finist docstring
+        :param config_file: Absolut path to your config file
+        :key dst: (str, Path) Absolute path of target folder
+        :key name_format: (str) strftime string format, default is ISO format
+        :key keep_name: (bool) result name is name_format + file's/folder's name
         :return: dict of: folder content, isbackup, removed files
 
-        if you have never used run_backup before, default is ISO format
-        if you want to just copy your project without using archive, use 'None' \
-        default is current path
+        if you want to just copy your project without using archive, use 'None'
         """
 
     override_config = set_correct_config(DEFAULT_CONFIG, overrides, config_file)
