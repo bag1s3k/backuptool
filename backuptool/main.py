@@ -7,11 +7,11 @@ from typing import Optional
 
 from backuptool.backup import BackupInstance
 from backuptool.utils import remove_readonly, maximum, set_correct_config
-from backuptool.decorator import check_kwargs
+from backuptool.decorator import check_params
 from backuptool.CONSTANS import DEFAULT_CONFIG, RUN_KEYS, CLEAN_KEYS
 
 
-@check_kwargs(RUN_KEYS)
+@check_params(RUN_KEYS)
 def run(config_file: Optional[str | Path] = None, **overrides) -> str:
     """ Create backup of your file or folder
 
@@ -71,7 +71,7 @@ def run(config_file: Optional[str | Path] = None, **overrides) -> str:
     return str(dest_folder)
 
 
-@check_kwargs(CLEAN_KEYS)
+@check_params(CLEAN_KEYS)
 def clean_up(config_file: Optional[str | Path] = None, **overrides) -> dict:
     """ Clean up backup folder
 
