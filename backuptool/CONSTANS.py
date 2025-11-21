@@ -1,7 +1,7 @@
-﻿from pathlib import Path
-from typing import Literal
+﻿from typing import Literal
+from pathlib import Path
 
-from backuptool.decorator import check_kwargs
+from backuptool.decorator import check_params
 
 # Allowed path keyword arguments
 PATH_KEYS = {
@@ -20,33 +20,32 @@ FILE_KEYS = {
 
 # Every possible keyword argument
 EVERY_KEY = {
-    *PATH_KEYS,
-    *FILE_KEYS
+    **PATH_KEYS,
+    **FILE_KEYS
 }
 
 
-@check_kwargs(EVERY_KEY)
-def exclude_keys(key_set: dict, exclude: set = None) -> set:
+@check_params(EVERY_KEY)
+def exclude_keys(key_set: dict, exclude: set = None) -> dict:
     """ Exclude specific keys from the given set
         :param key_set: original set of keys
         :param exclude: set with keys to exclude
         :return: new set with exclude keys removed
         """
-    result = set()
-    result |= set(key_set.keys())
-    result -= exclude
-    return result
+    if not exclude:
+        return {}
+    return {k: v for k,v in key_set.items() if k not in exclude}
 
 # Keyword arguments for run func
 RUN_KEYS = {
-    *PATH_KEYS,
-    *exclude_keys(FILE_KEYS, {"backups_amount"}) # TODO: exclude key
+    **PATH_KEYS,
+    **exclude_keys(FILE_KEYS, {"backups_amount"}) # TODO: exclude key
 }
 
 # Keyword arguments for clean func
 CLEAN_KEYS = {
-    *exclude_keys(FILE_KEYS, {"src"}),
-    *exclude_keys(FILE_KEYS, {"ignore", "keep_name", "archive_type"})
+    **exclude_keys(FILE_KEYS, {"src"}),
+    **exclude_keys(FILE_KEYS, {"ignore", "keep_name", "archive_type"})
 }
 
 # Default config key-value pairs
