@@ -73,16 +73,16 @@ def set_correct_config(old_config: dict, new_config: dict, config_file) -> dict:
         """
     pre_config = dict(old_config)
     if config_file:
-        pre_config = _override_dict(pre_config, f_config.convert())
+        pre_config = _override_values(pre_config, f_config.convert())
 
-    overrides = _override_dict(pre_config, new_config)
+    overrides = _override_values(pre_config, new_config)
 
     return overrides
 
 
-def _override_dict(old_dict: dict, new_dict: dict) -> dict:
-    """ Overwrite dictionary with another one
-        :param old_dict: dictionary to overwrite
+def _override_values(old_dict: dict, new_dict: dict) -> dict:
+    """ Join dictionary with another one, however keeps only those which are in the old_dic
+        :param old_dict: 
         :param new_dict: dictionary with current changes
         :return: overwritten dict
         """
@@ -98,7 +98,7 @@ def _override_dict(old_dict: dict, new_dict: dict) -> dict:
     return overrides
 
 
-def check_kwargs(kwargs):
+def check_params(kwargs):
     """ Check kwargs if it matches with default keys
         :param kwargs: variable to check
         """
