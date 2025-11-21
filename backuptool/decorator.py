@@ -1,5 +1,6 @@
 ﻿import inspect
 from functools import wraps
+from typing import get_args, get_origin, Literal
 
 
 def check_params(allowed: dict): # TODO: option to combinate multiple requirements
@@ -10,39 +11,65 @@ def check_params(allowed: dict): # TODO: option to combinate multiple requiremen
             """ Check kwargs if it matches with default keys
                 :param kwargs: variable to check
                 """
+            keys_to_check, wrong_keys, wrong_values = set(), set(), set()
 
-            # Get parameter names (excluding **kwargs)
+            # Get function's key parameters cuz these aren't in allowed
             sig = inspect.signature(func)
-            func_params = set(sig.parameters.keys())
+            ignore_keys = set(sig.parameters.keys())
 
-            param_to_check = set()
-            wrong_types = dict()
-            print(args)
             for arg in args:
+                # Check keys in case it's set
                 if isinstance(arg, set):
-                    param_to_check |= arg
-                elif isinstance(arg, dict):
-                    param_to_check |= arg.keys()
+                    if wrong_keys := [k for k in arg if k not in set(allowed)]:
+                        raise ValueError(f"Unknown keys: {wrong_keys} . Allowed: {list(set(allowed) - set(arg))}")
+
+                if isinstance(arg, dict):
+                    # Check keys in case it's dict
+                    if wrong_keys := [k for k in set(arg) if k not in set(allowed)]:
+                        raise ValueError(f"Unknown keys: {wrong_keys} . Allowed: {list(set(allowed) - set(arg))}")
+
+                    # Check values
                     for arg_key, arg_value in arg.items():
-                        # print(f"KEY: {arg_key} VALUE: {arg_value} TYPE: {type(arg_value)}")
-                        if isinstance(arg_value, str) and isinstance(allowed[arg_key], list):
-                            if arg_value not in allowed[arg_key]:
-                                wrong_types = {arg_key : arg_value}
-                        if isinstance(arg_value, list):
-                            if specific_wrongs := [item for item in arg_value if not isinstance(item, str)]:
-                                wrong_types |= {arg_key : specific_wrongs}
-            wrong_keys = set(kwargs.keys() | param_to_check) - set(allowed) - func_params # Set of wrong keys (spelling)
-            if wrong_keys:
-                raise ValueError(f"Unknown params: {[*wrong_keys]}. Allowed: {allowed}")
-            elif wrong_types:
-                tmp = wrong_types.keys() & allowed.keys()
-                raise ValueError(f"Invalid data types: {" ".join(f"{k}={v}" for k,v in wrong_types.items())}. Allowed: {" ".join(f"{k}={v}" for k,v in allowed.items() if k in tmp)}")
+                        # Are the *args an allowed dictionary? (no need to check)
+                        if arg_value == allowed[arg_key]:
+                            break
+
+                        # Check generic
+                        if which_generic := check_generic_type(allowed[arg_key]):
+                            # Literal (Literal["item", "item"])
+                            if which_generic == 1:
+                                wrong_values |= {arg_value} if arg_value not in get_args(allowed[arg_key]) else set()
+                            # List (list[str])
+                            if which_generic == 2:
+                                wrong_values |= {t for t in arg_value if not isinstance(t, get_args(allowed[arg_key])[0])}
+
+                            continue
+
+                        # Check remaining values
+                        try:
+                            if not isinstance(arg_value, allowed[arg_key]):
+                                wrong_values.add(arg_value)
+                        except:
+                            raise Exception(f"Invalid data: {arg_value}")
+
+                # Raise ValueError in case if keys aren't according to allowed
+                if wrong_keys := [k for k in keys_to_check - ignore_keys if k not in set(allowed)]:
+                    raise ValueError(f"Unknown keys: {wrong_keys} . Allowed: {list(set(allowed) - set(arg))}")
+                if wrong_values and wrong_values != True:
+                    raise ValueError(f"Unknown: {wrong_values}. Allowed: {...}")
 
             return func(*args, **kwargs)
         return wrapper
     return decorator
 
-# CONTINUE
-# - discovery that list of allowed value e.g ["zip", "tar"] is never used in list it's always 1 string
-# - list (that means [str])
-# - value (that means ["zip", "tar"]) values have to exactly match with that's in list
+def check_generic_type(value_type):
+    """ Is value generic?
+        :param value_type: allowed type
+        :return integer which indicate type of literal"""
+    origin = get_origin(value_type)
+    if origin is Literal:
+        return 1
+    elif origin is list:
+        return 2
+    else:
+        return 0
