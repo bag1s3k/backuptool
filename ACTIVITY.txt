@@ -5,3 +5,4 @@ It's just for github activity chart, after that i know thatday i did something
 14.11.2025 reworking decorator
 18.11.2025 check keys and value according to allowed values
 19.11.2025 continue in checking (i already know whats the problem, but dont know how to solve it)
+22.11.2025 Convert library itself to class, found issue in decorator (forgot to check **kwargs)
